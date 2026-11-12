@@ -1,0 +1,13 @@
+Iconos de "Function" del Remap. Pon aquí los archivos con EXACTAMENTE estos nombres.
+Formato: SVG (preferido) o PNG con fondo transparente (64x64). La app los pinta con el color del texto (usa una máscara),
+así que solo importa la silueta/transparencia, no el color.
+
+light-button.svg          (sol con medio círculo)  -> Light button
+lighting-cycle.svg        (sol con rayo)           -> Lighting Cycle
+color-cycle.svg           (dos flechas circulares) -> Color cycle
+pause-light-effect.svg    (sol con pausa)          -> Pause light effect
+lighting-mode-minus.svg   (sol con flecha <-)      -> Lighting Mode-
+lighting-mode-plus.svg    (sol con flecha ->)      -> Lighting Mode+
+lock-win.svg              (candado)                -> Lock Win
+(BR+, BR-, SP+, SP-, RDT y LW son texto, no llevan icono.)
+Si falta un archivo, el botón muestra su texto.

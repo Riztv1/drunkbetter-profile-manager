@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DrunkBetter Profile Manager</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: "Bahnschrift", "Segoe UI Variable", sans-serif;
+      /* Paleta tonos azul (por defecto) */
+      --espresso: #081F5C; --umber: #334EAC; --taupe: #7096D1; --mist: #D0E3FF; --sand: #E7F1FF; --cream: #F9FCFF;
+      --z: 1; --key-h: 44px;
+      --bg: var(--espresso);
+      --bg-deep: color-mix(in srgb, var(--espresso) 72%, #000);
+      --panel: var(--umber);
+      --panel-raised: color-mix(in srgb, var(--umber) 76%, var(--taupe));
+      --field: color-mix(in srgb, var(--espresso) 70%, var(--umber));
+      --line: color-mix(in srgb, var(--taupe) 70%, var(--umber));
+      --accent: var(--cream); --accent-ink: var(--espresso);
+      --text: var(--cream); --muted: var(--mist);
+      /* Texto pequeño sobre paneles: --mist puro no llega a 4.5:1 sobre --umber */
+      --subtle: color-mix(in srgb, var(--mist) 25%, var(--sand));
+      --ok: #9DB88A; --off: #B8705C;
+      --radius: 10px; --shadow: 0 10px 28px #0000004d;
+      background: var(--bg); color: var(--text);
+      scrollbar-color: var(--taupe) var(--bg-deep); scrollbar-width: thin;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; min-width: 760px; min-height: 100vh; background: var(--bg); }
+    button, input, select { font: inherit; }
+    button { color: inherit; cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
+    :focus-visible { outline: 2px solid var(--sand); outline-offset: 2px; }
+    .topbar { height: 64px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; border-bottom: 1px solid var(--line); background: var(--bg-deep); }
+    .brand { display: flex; gap: 12px; align-items: center; font-size: 17px; font-weight: 700; letter-spacing: 1px; }
+    .brand-icon { width: 32px; height: 32px; border-radius: 7px; object-fit: cover; flex-shrink: 0; box-shadow: 0 2px 8px #00000055; }
+    .brand-mark { color: var(--cream); font-size: 25px; }
+    .brand-sub { color: var(--muted); font-weight: 400; }
+    .top-nav { display: flex; align-items: stretch; margin-left: auto; margin-right: 22px; }
+    .nav-button { border: 0; border-bottom: 2px solid transparent; padding: 21px 14px 19px; background: transparent; color: var(--muted); font-size: 12px; letter-spacing: .4px; }
+    .nav-button:hover { color: var(--sand); }
+    .nav-button.active { color: var(--cream); border-bottom-color: var(--cream); }
+    .device-status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--off); }
+    .status-dot.online { background: var(--ok); box-shadow: 0 0 10px #9DB88A88; }
+    /* Las tres pestañas comparten el mismo esqueleto: panel izquierdo · centro · panel derecho */
+    .shell, .remap-view, .color-view { display: grid; grid-template-columns: 220px minmax(0, 1fr) 260px; gap: 18px; max-width: 1500px; margin: auto; padding: 18px 24px; align-items: start; }
+    .profiles-panel, .automation-panel, .editor, .remap-board, .remap-profiles, .remap-actions, .lighting-effects, .lighting-settings, .color-board { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .profiles-panel { padding: 18px 14px; min-height: calc(100vh / var(--z) - 112px); }
+    .automation-panel, .remap-profiles, .remap-actions, .lighting-effects, .lighting-settings { padding: 16px 13px; }
+    .eyebrow { color: var(--subtle); text-transform: uppercase; font-size: 10px; letter-spacing: 1.5px; }
+    h1 { font-size: 21px; margin: 5px 0 22px; font-weight: 600; }
+    h2 { font-size: 15px; margin: 0; font-weight: 600; }
+    .remap-profiles h2, .remap-actions h2, .lighting-effects h2, .lighting-settings h2, .automation-panel h2 { margin: 4px 0 15px; }
+    .profile-list { display: grid; gap: 5px; margin: 12px 0 8px; }
+    .profile-item { display: grid; grid-template-columns: minmax(0, 1fr) 30px; gap: 4px; align-items: center; }
+    .profile-button, .remap-layer { width: 100%; border: 1px solid transparent; border-radius: 7px; text-align: left; padding: 10px; background: transparent; color: var(--sand); }
+    .profile-button:hover, .remap-layer:hover { background: var(--panel-raised); color: var(--cream); }
+    .profile-button.active, .remap-layer.active { border-color: var(--cream); background: var(--cream); color: var(--accent-ink); font-weight: 600; }
+    .profile-form { display: grid; grid-template-columns: minmax(0, 1fr) 38px; gap: 6px; margin: 10px 0 20px; }
+    .profile-form input, .game-form input, .game-form select { width: 100%; min-width: 0; height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); color: var(--text); }
+    .profile-form input::placeholder, .game-form input::placeholder { color: var(--muted); }
+    .profile-form input:focus, .game-form input:focus, .game-form select:focus { outline: 0; border-color: var(--sand); box-shadow: 0 0 0 3px #C4B6AB33; }
+    .profile-form button, .remove-profile, .toolbar button, .game-form button, .color-tools button, .mini { border: 1px solid var(--taupe); border-radius: 7px; background: var(--panel-raised); color: var(--text); }
+    .profile-form button:hover, .remove-profile:hover, .toolbar button:hover, .game-form button:hover, .color-tools button:hover, .mini:hover { border-color: var(--sand); background: color-mix(in srgb, var(--panel-raised) 80%, var(--sand)); }
+    .profile-form button { font-size: 20px; line-height: 1; }
+    .remove-profile { padding: 6px 9px; color: var(--sand); font-size: 11px; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid var(--line); padding-top: 15px; font-size: 13px; }
+    .automation-panel .toggle-row { border-top: 0; padding-top: 0; }
+    .advanced-controls { display: grid; gap: 7px; margin-top: 18px; }
+    .advanced-title { margin: 0 0 3px; color: var(--subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; }
+    .advanced-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 0; color: var(--sand); font-size: 12px; }
+    input[type="checkbox"] { accent-color: var(--cream); width: 16px; height: 16px; }
+    .hint { color: var(--subtle); font-size: 12px; line-height: 1.5; margin-top: 9px; }
+    main { min-width: 0; display: grid; gap: 16px; align-content: start; }
+    .editor { padding: 18px; overflow: hidden; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+    .active-name { color: var(--sand); font-size: 12px; }
+    .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .toolbar button, .primary, .game-form button, .color-tools button, .mini { padding: 8px 11px; font-size: 12px; }
+    .toolbar .primary, .primary { border: 1px solid var(--sand); background: var(--cream); color: var(--accent-ink); font-weight: 600; }
+    .toolbar .primary:hover, .primary:hover, .game-form .primary:hover { background: var(--sand); border-color: var(--cream); color: var(--accent-ink); }
+    .keyboard-scroll { position: relative; display: flex; justify-content: center; overflow-x: auto; padding: 14px 12px; user-select: none; -webkit-user-select: none; touch-action: none; background: var(--bg-deep); border: 1px solid var(--line); border-radius: 8px; }
+    .keyboard { width: 100%; max-width: 900px; min-width: 0; display: grid; gap: 6px; margin-inline: auto; }
+    .key-row { display: flex; width: 100%; gap: 2px; min-height: 44px; }
+    .key { flex: var(--width, 1) 1 0; min-width: 0; height: 44px; overflow: hidden; padding: 4px 3px; border: 1px solid var(--taupe); border-radius: 6px; background: linear-gradient(180deg, color-mix(in srgb, var(--taupe) 62%, var(--umber)), var(--umber)); color: var(--text); font-size: 10px; box-shadow: 0 2px 0 #1a100b; white-space: nowrap; text-overflow: clip; }
+    .key:hover { border-color: var(--sand); }
+    .key[data-key-code="ArrowUp"] { transform: translateX(-6px); }
+    .key.selected { color: var(--accent-ink); border-color: var(--cream); background: var(--cream); box-shadow: 0 0 10px #EADDD355, 0 2px 0 #1a100b; }
+    .key.configured::after { content: ""; display: block; width: 4px; height: 4px; margin: 3px auto 0; border-radius: 50%; background: var(--sand); }
+    .key.selected.configured::after { background: var(--umber); }
+    .key-gap { flex: .5 1 0; }
+    .marquee { position: fixed; z-index: 60; pointer-events: none; border: 1px solid var(--sand); border-radius: 3px; background: #C4B6AB2e; }
+    .selection-bar { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 11px; color: var(--subtle); font-size: 12px; }
+    .settings { display: grid; grid-template-columns: minmax(170px, 1.1fr) repeat(2, minmax(130px, .8fr)) auto; align-items: end; gap: 14px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 15px; }
+    .field { display: grid; gap: 7px; color: var(--sand); font-size: 12px; }
+    .field small { color: var(--subtle); font-size: 10px; margin-left: 4px; }
+    .range-control { display: grid; grid-template-columns: minmax(70px, 1fr) 46px; align-items: center; gap: 8px; }
+    .range-control output, .mini-field output { color: var(--cream); font-variant-numeric: tabular-nums; text-align: right; }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; margin: 6px 0; border-radius: 99px; cursor: pointer; background: linear-gradient(90deg, var(--cream) var(--fill, 50%), #79625499 var(--fill, 50%)); }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--cream); border: 2px solid var(--espresso); box-shadow: 0 0 0 3px #C4B6AB33; transition: box-shadow .15s; }
+    input[type="range"]:hover::-webkit-slider-thumb { background: var(--sand); box-shadow: 0 0 0 5px #C4B6AB40; }
+    /* Panel derecho: automatización */
+    .game-form { display: grid; gap: 8px; margin: 14px 0; }
+    .games-list { display: grid; }
+    .game-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 2px; border-top: 1px solid var(--line); font-size: 12px; }
+    .game-meta { display: grid; gap: 2px; min-width: 0; }
+    .game-process { overflow-wrap: anywhere; }
+    .game-profile { color: var(--subtle); }
+    .remove-game { border: 0; background: transparent; color: var(--sand); font-size: 18px; padding: 0 5px; }
+    .remove-game:hover { color: var(--cream); }
+    #message { min-height: 16px; margin: 8px 0 0; color: var(--sand); font-size: 12px; }
+    #deviceError { overflow-wrap: anywhere; }
+    /* Subpanels: Release Dual-Trigger y Last Win */
+    .subpanel { display: grid; gap: 8px; margin: 2px 0 8px; padding: 10px; background: var(--field); border: 1px solid var(--line); border-left: 3px solid var(--sand); border-radius: 8px; }
+    .subpanel-head { display: flex; align-items: center; justify-content: space-between; color: var(--subtle); font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; }
+    .subpanel .hint { margin: 0; font-size: 11px; }
+    .group-list { display: grid; gap: 8px; }
+    .group-card { display: grid; gap: 6px; padding: 8px; background: color-mix(in srgb, var(--umber) 70%, var(--espresso)); border: 1px solid var(--line); border-radius: 7px; }
+    .group-head { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .chip { padding: 2px 8px; border: 1px solid var(--sand); border-radius: 99px; background: #C4B6AB22; color: var(--cream); font-size: 11px; }
+    .group-head .spacer { flex: 1; }
+    .mini { padding: 3px 8px; font-size: 12px; line-height: 1.2; }
+    .mini-field { display: grid; grid-template-columns: 1fr 44px; gap: 2px 6px; align-items: center; color: var(--sand); font-size: 11px; }
+    .mini-field input { grid-column: 1 / -1; order: 3; margin: 2px 0; }
+    /* Remap y Colour */
+    .remap-layer-list { display: grid; gap: 6px; }
+    .remap-board, .color-board { min-width: 0; padding: 16px; }
+    .remap-board .section-heading, .color-board .section-heading { margin-bottom: 12px; }
+    .remap-board .key { touch-action: manipulation; user-select: none; }
+    .remap-key.drag-selected { color: var(--accent-ink); border-color: var(--cream); background: var(--cream); box-shadow: 0 0 10px #EADDD355; }
+    .remap-key.has-assignment { box-shadow: inset 0 -3px 0 var(--sand); }
+    .remap-key-label { display: block; }
+    .remap-key-action { display: block; margin-top: 3px; color: var(--sand); font-size: 9px; }
+    .remap-key.drag-selected .remap-key-action { color: var(--umber); }
+    .remap-selection-bar { display: flex; justify-content: space-between; gap: 8px; margin-top: 11px; color: var(--subtle); font-size: 12px; }
+    .remap-category { margin: 15px 0 7px; color: var(--sand); font-size: 12px; font-weight: 600; }
+    .remap-actions-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+    .remap-action { min-height: 31px; padding: 5px 3px; border: 1px solid var(--taupe); border-radius: 5px; background: var(--panel-raised); color: var(--text); font-size: 10px; }
+    .remap-action:hover, .remap-action.active { border-color: var(--sand); background: var(--cream); color: var(--accent-ink); }
+    .remap-status, .color-status { min-height: 18px; margin-top: 12px; color: var(--subtle); font-size: 11px; line-height: 1.4; }
+    .lighting-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+    .lighting-effect { min-height: 37px; padding: 7px 5px; border: 1px solid transparent; border-radius: 6px; background: var(--panel-raised); color: var(--text); font-size: 11px; }
+    .lighting-effect:hover { border-color: var(--sand); }
+    .lighting-effect.active { border-color: var(--cream); background: var(--cream); color: var(--accent-ink); font-weight: 600; }
+    .color-key.lit { border-color: var(--key-light); background: linear-gradient(180deg, color-mix(in srgb, var(--key-light) 54%, var(--umber)), color-mix(in srgb, var(--key-light) 22%, var(--espresso))); box-shadow: 0 0 12px color-mix(in srgb, var(--key-light) 76%, transparent), inset 0 0 8px color-mix(in srgb, var(--key-light) 36%, transparent); }
+    .color-key.color-selected { outline: 1px solid var(--cream); outline-offset: 1px; }
+    .color-tools { display: flex; gap: 7px; margin-bottom: 11px; }
+    .color-tools button { padding: 6px 9px; font-size: 11px; }
+    .color-tools button.active { border-color: var(--cream); background: var(--cream); color: var(--accent-ink); }
+    .color-selection-count { margin-left: auto; align-self: center; color: var(--subtle); font-size: 11px; }
+    .color-swatches { display: flex; justify-content: space-between; gap: 7px; margin: 10px 0 12px; }
+    .color-swatch { width: 22px; height: 22px; padding: 0; border: 1px solid #C4B6AB88; border-radius: 50%; }
+    .color-swatch.active { outline: 2px solid var(--cream); outline-offset: 2px; }
+    .custom-color { width: 100%; height: 36px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); }
+    .lighting-control { display: grid; gap: 8px; margin-top: 16px; padding: 12px 10px; background: var(--field); border: 1px solid var(--line); border-radius: 8px; }
+    .lighting-control label, .lighting-control .control-heading { display: flex; justify-content: space-between; align-items: center; color: var(--sand); font-size: 11px; }
+    /* Remap: iconos, Numpad, asociación a perfil */
+    .remap-icon { display: inline-block; width: 16px; height: 16px; vertical-align: middle; background: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+    .remap-action.has-icon { display: flex; align-items: center; justify-content: center; }
+    .remap-key-action.default-action { opacity: .65; font-style: italic; }
+    .remap-bind { display: grid; gap: 6px; margin: 4px 0 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .remap-bind select { width: 100%; height: 34px; padding: 0 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); color: var(--text); }
+    .remap-bind .hint { margin: 0; font-size: 11px; }
+    /* Keystroke tracking */
+    .track-panel { padding: 8px; background: var(--field); border: 1px solid var(--line); border-radius: 8px; }
+    .track-log { list-style: none; margin: 0 0 6px; padding: 0; max-height: 210px; overflow-y: auto; display: grid; gap: 3px; font-size: 11px; }
+    .track-log li { display: grid; grid-template-columns: auto 1fr auto; gap: 7px; align-items: center; color: var(--subtle); }
+    .track-log .tk { padding: 0 5px; border: 1px solid var(--taupe); border-radius: 3px; color: var(--sand); min-width: 22px; text-align: center; }
+    .track-log time { font-variant-numeric: tabular-nums; }
+
+    /* Temas (menú de ajustes). El azul es el de :root. */
+    html[data-theme="dark"] { --espresso: #07070A; --umber: #1A1A1F; --taupe: #4A4A52; --mist: #8E8E97; --sand: #C6C6CD; --cream: #F1F1F3; --line: #34343b; }
+    html[data-theme="dark"] .key[data-key-code="Escape"], html[data-theme="dark"] .key[data-key-code="Enter"] { background: linear-gradient(180deg, #E5343D, #A3141C); border-color: #FF6068; color: #fff; }
+    html[data-theme="white"] { color-scheme: light; --espresso: #F1F2F5; --umber: #FFFFFF; --taupe: #C3C6CE; --mist: #6E727C; --sand: #4C5059; --cream: #24272D; --line: #CDD0D7; --shadow: 0 8px 22px #00000018; }
+    html[data-theme="white"] .key { color: #6B6F78; background: linear-gradient(180deg, #E4E6EB, #D3D6DD); box-shadow: 0 2px 0 #B5B9C2; }
+    html[data-theme="white"] .key.selected { color: #fff; background: #24272D; }
+    html[data-theme="white"] .key[data-key-code="Escape"], html[data-theme="white"] .key[data-key-code="Enter"] { background: linear-gradient(180deg, #FF9A3D, #E8730C); border-color: #F28B2C; color: #fff; box-shadow: 0 2px 0 #B8570A; }
+    html[data-theme="earth"] { --espresso: #2D1E17; --umber: #523F31; --taupe: #796254; --mist: #9D8A7C; --sand: #C4B6AB; --cream: #EADDD3; }
+    html[data-theme="ibm"] { --espresso: #06293A; --umber: #0D6F8F; --taupe: #1FB88C; --mist: #FFD167; --sand: #F9A98B; --cream: #FFEBE0; --accent: #F04770; --accent-ink: #fff; }
+    /* Escalado: la interfaz entera se ajusta al tamaño de la ventana (zoom calculado en app.js) */
+    .shell, .remap-view, .color-view { max-width: none !important; }
+    .keyboard { max-width: none !important; }
+    .key-row { min-height: var(--key-h); }
+    .key { height: var(--key-h); }
+    .remap-actions { position: sticky; top: 10px; max-height: calc(100vh / var(--z) - 90px); overflow-y: scroll; scrollbar-gutter: stable; scrollbar-width: auto; scrollbar-color: var(--sand) var(--bg-deep); }
+    .remap-actions::-webkit-scrollbar { width: 10px; }
+    .remap-actions::-webkit-scrollbar-track { background: var(--bg-deep); border-radius: 6px; }
+    .remap-actions::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 6px; border: 2px solid var(--bg-deep); }
+    .remap-actions-grid[data-action-group="function"], .remap-actions-grid[data-action-group="media"], .remap-actions-grid[data-action-group="mouse"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .remap-actions-grid[data-action-group="function"] .remap-action, .remap-actions-grid[data-action-group="media"] .remap-action, .remap-actions-grid[data-action-group="mouse"] .remap-action { min-height: 52px; }
+    .remap-action.has-icon .remap-icon { width: 28px; height: 28px; }
+    .lighting-settings { min-width: 0; overflow: hidden; }
+    .color-swatches { display: grid; grid-template-columns: repeat(auto-fit, minmax(24px, 1fr)); justify-items: start; gap: 8px; }
+    .custom-color { display: block; width: 100%; max-width: 100%; padding: 0; }
+    /* Ajustes */
+    .topright { display: flex; align-items: center; gap: 14px; }
+    .settings-wrap { position: relative; }
+    .icon-button { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--text); }
+    .icon-button:hover { border-color: var(--sand); }
+    .icon-button .remap-icon { width: 20px; height: 20px; }
+    .settings-menu { position: absolute; right: 0; top: 42px; z-index: 30; width: 330px; max-height: calc(100vh - 64px); overflow-y: auto; padding: 14px; display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .settings-menu h3 { margin: 0; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--subtle); }
+    .settings-menu .row { display: flex; gap: 8px; }
+    .settings-menu .row button, .settings-menu select { flex: 1; height: 34px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); color: var(--text); }
+    .about-details { border: 1px solid var(--line); border-radius: 7px; background: var(--field); padding: 8px 10px; font-size: 11px; line-height: 1.45; color: var(--subtle); user-select: text; }
+    .about-details summary { cursor: pointer; color: var(--sand); font-weight: 600; list-style-position: inside; }
+    .about-body { display: grid; gap: 7px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
+    .about-body p { margin: 0; }
+    .about-body code { font-size: 10px; color: var(--cream); }
+    .anticheat-hint { color: var(--sand); border-left: 2px solid #F4D83B; padding-left: 7px; }
+    .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--sand); }
+    .switch-row input, .advanced-toggle input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; width: 38px; height: 22px; border-radius: 11px; background: var(--field); border: 1px solid var(--line); position: relative; cursor: pointer; transition: background .15s; }
+    .switch-row input::after, .advanced-toggle input[type="checkbox"]::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--mist); transition: transform .15s, background .15s; }
+    .switch-row input:checked, .advanced-toggle input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
+    .switch-row input:checked::after, .advanced-toggle input[type="checkbox"]:checked::after { transform: translateX(16px); background: var(--accent-ink); }
+    .switch-row input:disabled, .advanced-toggle input[type="checkbox"]:disabled { opacity: .5; cursor: not-allowed; }
+    .profile-rename { width: 100%; height: 36px; padding: 0 8px; border: 1px solid var(--cream); border-radius: 7px; background: var(--field); color: var(--text); }
+    .turbo-warning { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--sand); border-left: 4px solid #F4D83B; border-radius: 8px; background: color-mix(in srgb, var(--field) 85%, #F4D83B); color: var(--cream); font-size: 12px; line-height: 1.45; }
+    .turbo-warning strong { color: #F4D83B; }
+    .settings-note { margin: -2px 0 2px; padding: 7px 9px; border-radius: 6px; background: var(--field); border: 1px solid var(--line); color: var(--subtle); font-size: 11px; line-height: 1.4; }
+    @media (max-width: 950px) {
+      .shell, .remap-view, .color-view { grid-template-columns: 200px minmax(0, 1fr); padding: 12px; gap: 12px; }
+      .automation-panel, .remap-actions, .lighting-settings { grid-column: 1 / -1; }
+      .automation-panel .game-form { grid-template-columns: minmax(170px, 1fr) 180px auto; }
+      .settings { grid-template-columns: repeat(2, minmax(130px, 1fr)); }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img class="brand-icon" src="icons/tray.png" alt="DrunkBetter"><span>DRUNKBETTER <span class="brand-sub">PROFILE MANAGER</span></span></div>
+    <nav class="top-nav" data-i18n-aria="nav.aria" aria-label="Navegación principal">
+      <button id="colourTab" class="nav-button" type="button" aria-pressed="false">Colour</button>
+      <button id="mainTab" class="nav-button active" type="button" aria-pressed="true">Main</button>
+      <button id="remapTab" class="nav-button" type="button" aria-pressed="false">Remap</button>
+    </nav>
+    <div class="topright"><div class="device-status"><span id="statusDot" class="status-dot"></span><span id="connection" data-i18n="status.searching">Buscando teclado</span><span id="currentProfile"></span><span id="activeProcess"></span></div>
+    <div class="settings-wrap">
+      <button id="settingsBtn" class="icon-button" type="button" data-i18n-aria="settings.title" data-i18n-title="settings.title" aria-label="Ajustes" aria-haspopup="true" aria-expanded="false" title="Ajustes"><span class="settings-glyph">⚙</span></button>
+      <div id="settingsMenu" class="settings-menu" role="menu" hidden>
+        <h3 data-i18n="settings.profiles">Perfiles</h3>
+        <div class="row"><button id="importProfile" type="button" data-i18n="settings.import">Importar JSON</button><button id="exportProfile" type="button" data-i18n="settings.export">Exportar JSON</button></div>
+        <h3 data-i18n="settings.system">Sistema</h3>
+        <label class="switch-row"><span data-i18n="settings.launchAtLogin">Iniciar con Windows</span><input id="setLaunchAtLogin" type="checkbox"></label>
+        <label class="switch-row"><span data-i18n="settings.closeToBg">Al pulsar la «X», mantener en segundo plano</span><input id="setCloseToBackground" type="checkbox"></label>
+        <label class="switch-row"><span data-i18n="settings.resetOnExit">Al cerrar del todo, volver a «Escritura estándar»</span><input id="setResetOnExit" type="checkbox"></label>
+        <label id="keepLastRow" class="switch-row" hidden><span data-i18n="settings.keepLast">Dejar puesto el último perfil activo al cerrar</span><input id="setKeepLast" type="checkbox"></label>
+        <p id="exitBehaviorHint" class="settings-note" data-i18n-html="settings.exitHintHtml">Si desactivas tanto «Volver a Escritura estándar» como «Dejar puesto el último perfil activo al cerrar», en el teclado se quedará puesto <strong>el último perfil elegido a mano</strong>.</p>
+        <h3 data-i18n="settings.language">Idioma</h3>
+        <select id="languageSelect" data-i18n-aria="settings.language" aria-label="Idioma">
+          <option value="auto" data-i18n="settings.langAuto">Automático (sistema)</option>
+          <option value="es" data-i18n="settings.langEs">Español</option>
+          <option value="en" data-i18n="settings.langEn">English</option>
+        </select>
+        <h3 data-i18n="settings.theme">Tema</h3>
+        <select id="themeSelect" data-i18n-aria="settings.theme" aria-label="Tema">
+          <option value="blue" data-i18n="settings.themeBlue">Azul (por defecto)</option><option value="dark" data-i18n="settings.themeDark">Dark</option><option value="white" data-i18n="settings.themeWhite">White</option>
+          <option value="earth" data-i18n="settings.themeEarth">Tierra</option><option value="ibm" data-i18n="settings.themeIbm">IBM</option>
+        </select>
+        <h3 data-i18n="settings.about">Acerca de</h3>
+        <details class="about-details">
+          <summary data-i18n="about.summary">DrunkBetter Profile Manager v1.0.0 · Avisos legales</summary>
+          <div class="about-body">
+            <p data-i18n="about.meta">Versión 1.0.0 · Código abierto bajo licencia ISC.</p>
+            <p data-i18n-html="about.disclaimerHtml">Herramienta comunitaria independiente y de código abierto desarrollada únicamente para interoperabilidad de hardware. <strong>No</strong> está afiliada, asociada, autorizada ni respaldada por DrunkDeer ni por sus filiales (web oficial: <code>https://drunkdeer.com</code>). «DrunkDeer» y las marcas relacionadas pertenecen a sus respectivos propietarios; su mención es estrictamente identificativa. El software se entrega «tal cual», sin garantías de ningún tipo.</p>
+            <p data-i18n="about.hardware">Hardware y protocolo: desarrollado mediante ingeniería inversa sobre DrunkDeer A75 Pro (VID 1452 / PID 591). No se garantiza compatibilidad con otros modelos ni con futuras actualizaciones de firmware. Ante cualquier desajuste, puedes restablecer el teclado desde el software o web oficial.</p>
+            <p data-i18n="about.privacy">Privacidad 100 % local: la detección de procesos (active-win) y Keystroke Tracking se ejecutan únicamente en tu equipo, sin conexión a internet ni telemetría.</p>
+            <p data-i18n="about.anticheat">Políticas Anti-Cheat: modos como Last Win (SOCD / Snap Tap) o Release Dual-Trigger (macros 2-en-1) pueden estar prohibidos en juegos y plataformas competitivas (como Valve en CS2 o Valorant). La responsabilidad de su uso recae exclusivamente en el usuario final.</p>
+          </div>
+        </details>
+      </div>
+    </div>
+    </div>
+  </header>
+  <div id="managerView" class="shell">
+    <aside class="profiles-panel">
+      <div class="eyebrow" data-i18n="main.configEyebrow">Configuración</div>
+      <h1 data-i18n="main.profilesHeading">Perfiles</h1>
+      <div id="profiles" class="profile-list"></div>
+      <form id="profileForm" class="profile-form">
+        <input id="newProfileName" type="text" maxlength="32" data-i18n-placeholder="main.newProfilePlaceholder" data-i18n-aria="main.newProfileAria" placeholder="Nuevo perfil" aria-label="Nombre del perfil" required>
+        <button type="submit" data-i18n-title="main.addProfileTitle" data-i18n-aria="main.addProfileTitle" title="Añadir perfil" aria-label="Añadir perfil">+</button>
+      </form>
+      <div class="advanced-controls">
+        <p class="advanced-title" data-i18n="main.profileControls">Controles del perfil</p>
+        <label class="advanced-toggle" for="rapidTriggerMode"><span>Rapid Trigger Mode</span><input id="rapidTriggerMode" type="checkbox"></label>
+        <label class="advanced-toggle" for="releaseDualTrigger"><span>Release Dual-Trigger</span><input id="releaseDualTrigger" type="checkbox"></label>
+        <section id="dualPanel" class="subpanel" hidden>
+          <div class="subpanel-head"><span>Groups</span><button id="dualAdd" class="mini" type="button" data-i18n-title="main.addDualTitle" title="Crear grupo con las 2 teclas seleccionadas">+</button></div>
+          <div id="dualGroups" class="group-list"></div>
+          <p class="hint" data-i18n="main.dualHint">Selecciona 2 teclas (principal y disparo) y pulsa +. Cada grupo tiene su propio punto de activación y reset.</p>
+          <p class="hint anticheat-hint" data-i18n="main.anticheatHint">⚠️ Algunas plataformas competitivas (p. ej. CS2 / Valorant) restringen funciones tipo SOCD / Snap Tap o macros 2-en-1. Su uso es responsabilidad exclusiva del usuario.</p>
+        </section>
+        <label class="advanced-toggle" for="lastWinMode"><span>Last Win Mode</span><input id="lastWinMode" type="checkbox"></label>
+        <section id="lastWinPanel" class="subpanel" hidden>
+          <div class="subpanel-head"><span>Groups</span><button id="lastWinAdd" class="mini" type="button" data-i18n-title="main.addLwTitle" title="Crear grupo con las teclas seleccionadas">+</button></div>
+          <div id="lastWinGroups" class="group-list"></div>
+          <p class="hint" data-i18n="main.lastWinHint">Selecciona exactamente 2 teclas y pulsa +. En cada grupo el teclado prioriza la última pulsada.</p>
+          <p class="hint anticheat-hint" data-i18n="main.anticheatHint">⚠️ Algunas plataformas competitivas (p. ej. CS2 / Valorant) restringen funciones tipo SOCD / Snap Tap o macros 2-en-1. Su uso es responsabilidad exclusiva del usuario.</p>
+        </section>
+        <label class="advanced-toggle" for="turboMode"><span>Turbo Mode</span><input id="turboMode" type="checkbox"></label>
+        <label class="advanced-toggle" for="keystrokeTracking"><span>Keystroke Tracking</span><input id="keystrokeTracking" type="checkbox"></label>
+        <section id="trackPanel" class="track-panel" hidden>
+          <ol id="trackLog" class="track-log" aria-live="off"></ol>
+          <p class="hint" data-i18n="main.trackHint">Registra las teclas pulsadas mientras esta ventana tiene el foco.</p>
+        </section>
+      </div>
+      <p id="deviceError" class="hint"></p>
+      <p id="message" role="status"></p>
+    </aside>
+    <main>
+      <section class="editor">
+        <div class="section-heading"><div><div class="eyebrow" data-i18n="editor.eyebrow">Editor de teclado</div><h2 data-i18n="editor.heading">Asignación por tecla</h2></div><div><span id="profileName" class="active-name"></span> <button id="removeProfile" class="remove-profile" type="button" data-i18n="main.removeProfileBtn" hidden>Eliminar perfil</button></div></div>
+        <div class="toolbar">
+          <button id="selectWasd" type="button">WASD</button>
+          <button id="selectAll" type="button" data-i18n="editor.selectAll">Seleccionar todas</button>
+          <button id="clearSelection" type="button" data-i18n="editor.clearSelection">Limpiar selección</button>
+          <button id="applyProfile" class="primary" type="button" data-i18n="editor.applyProfile">Aplicar perfil</button>
+        </div>
+        <div id="keyboardViewport" class="keyboard-scroll"><div id="keyboard" class="keyboard" data-i18n-aria="editor.ariaBoard" aria-label="Teclado ANSI interactivo"></div></div>
+        <div class="selection-bar"><span id="selectionCount" data-i18n="editor.noneSelected">Ninguna tecla seleccionada</span><span data-i18n="editor.dragHint">Clic o arrastra un rectángulo · Ctrl/Shift suma</span></div>
+        <div class="settings">
+          <label class="field" for="actionPoint"><span data-i18n="editor.actionPoint">Punto de actuación</span>
+            <span class="range-control"><input id="actionPoint" type="range" min="0.2" max="3.3" step="0.1" value="2"><output id="actionPointValue">2.0mm</output></span>
+          </label>
+          <label class="field" id="downstrokeField" for="downstroke" hidden><span data-i18n="editor.downstroke">Sensibilidad de bajada</span><small>Press to activate</small>
+            <span class="range-control"><input id="downstroke" type="range" min="0.1" max="3.1" step="0.1" value="0.2"><output id="downstrokeValue">0.2mm</output></span>
+          </label>
+          <label class="field" id="upstrokeField" for="upstroke" hidden><span data-i18n="editor.upstroke">Sensibilidad de subida</span><small>Release Reset</small>
+            <span class="range-control"><input id="upstroke" type="range" min="0.1" max="3.1" step="0.1" value="0.1"><output id="upstrokeValue">0.1mm</output></span>
+          </label>
+          <button id="saveKeys" class="primary" type="button" data-i18n="editor.saveKeys">Guardar teclas</button>
+        </div>
+        <p class="hint" data-i18n="editor.footerHint">Los valores se guardan por tecla con el esquema de exportación DrunkDeer. Press to activate y Release Reset son distancias independientes (0.1–3.3 mm), no posiciones absolutas.</p>
+      </section>
+    </main>
+    <aside class="automation-panel">
+      <div class="eyebrow" data-i18n="auto.eyebrow">Automatización</div>
+      <h2 data-i18n="auto.heading">Juegos y aplicaciones</h2>
+      <label class="toggle-row" for="autoMode"><span data-i18n="auto.toggle">Detección automática</span><input id="autoMode" type="checkbox"></label>
+      <p class="hint" data-i18n="auto.hint">Cambia de perfil cuando el proceso asociado pasa a primer plano.</p>
+      <form id="gameForm" class="game-form">
+        <input id="processName" type="text" data-i18n-placeholder="auto.placeholder" data-i18n-aria="auto.processAria" placeholder="Ej. osu!.exe" autocomplete="off" aria-label="Proceso" required>
+        <select id="gameProfile" data-i18n-aria="auto.profileAria" aria-label="Perfil asociado"></select>
+        <button class="primary" type="submit" data-i18n="auto.addBtn">Añadir proceso</button>
+      </form>
+      <div id="gamesList" class="games-list"></div>
+    </aside>
+  </div>
+  <main id="colourView" class="color-view" hidden>
+    <aside class="lighting-effects">
+      <div class="eyebrow">Colour</div>
+      <h2 data-i18n="colour.effectsHeading">Lighting effects</h2>
+      <div id="lightingEffects" class="lighting-grid">
+        <button class="lighting-effect active" type="button" data-effect="off">Lighting turn off</button>
+        <button class="lighting-effect" type="button" data-effect="turbo">Turbo mode light</button>
+        <button class="lighting-effect" type="button" data-effect="custom">Custom light</button>
+        <button class="lighting-effect" type="button" data-effect="marquee">Rotate Marquee</button>
+        <button class="lighting-effect" type="button" data-effect="always">Always light</button>
+        <button class="lighting-effect" type="button" data-effect="spectrum">Spectrum</button>
+        <button class="lighting-effect" type="button" data-effect="breath">Breath</button>
+        <button class="lighting-effect" type="button" data-effect="lightByPress">Light by press</button>
+        <button class="lighting-effect" type="button" data-effect="stars">Stars</button>
+        <button class="lighting-effect" type="button" data-effect="waveSpectrum">Wave Spectrum</button>
+        <button class="lighting-effect" type="button" data-effect="centerSurfing">Center Surfing</button>
+        <button class="lighting-effect" type="button" data-effect="surfingDown">Surfing down</button>
+        <button class="lighting-effect" type="button" data-effect="ripple">Ripple</button>
+        <button class="lighting-effect" type="button" data-effect="glowingFish">Glowing Fish</button>
+        <button class="lighting-effect" type="button" data-effect="colorfulFountain">Colorful Fountain</button>
+        <button class="lighting-effect" type="button" data-effect="traffic">Traffic</button>
+        <button class="lighting-effect" type="button" data-effect="gluttonousSnake">Gluttonous Snake</button>
+        <button class="lighting-effect" type="button" data-effect="repeatSurfing">Repeat Surfing</button>
+        <button class="lighting-effect" type="button" data-effect="surfingCross">Surfing Cross</button>
+        <button class="lighting-effect" type="button" data-effect="laserKey">Laser Key</button>
+        <button class="lighting-effect" type="button" data-effect="randomFountain">Random Fountain</button>
+      </div>
+    </aside>
+    <section class="color-board">
+      <div class="section-heading"><div><div class="eyebrow" data-i18n="colour.previewEyebrow">Keyboard preview</div><h2 id="lightingTitle">Lighting turn off</h2></div></div>
+      <div id="turboWarningBanner" class="turbo-warning" role="alert" hidden><span id="turboClickStatus"></span></div>
+      <div class="color-tools">
+        <button id="selectAllColorKeys" class="active" type="button">All keys</button>
+        <button id="clearColorKeys" type="button">Clear</button>
+        <span id="colorSelectionCount" class="color-selection-count" data-i18n="colour.allKeys">Todas las teclas</span>
+      </div>
+      <div id="colorViewport" class="keyboard-scroll"><div id="colorKeyboard" class="keyboard" data-i18n-aria="colour.ariaBoard" aria-label="Previsualización de iluminación del teclado"></div></div>
+      <p id="colorStatus" class="color-status" role="status" data-i18n="colour.statusDefault">Efectos, color, brillo y velocidad se envían al teclado.</p>
+    </section>
+    <aside class="lighting-settings">
+      <div class="eyebrow" data-i18n="colour.settingsEyebrow">Lighting settings</div>
+      <h2 data-i18n="colour.settingsHeading">Color y efectos</h2>
+      <div id="colorControls">
+        <div class="lighting-control">
+          <div class="control-heading">Lighting colour <output id="colorHex">#FF343B</output></div>
+          <div class="color-swatches">
+            <button class="color-swatch active" type="button" data-color="#FF343B" data-index="1" style="background:#FF343B" data-i18n-aria="colour.swatch.red" aria-label="Rojo"></button>
+            <button class="color-swatch" type="button" data-color="#42D66B" data-index="2" style="background:#42D66B" data-i18n-aria="colour.swatch.green" aria-label="Verde"></button>
+            <button class="color-swatch" type="button" data-color="#386BFF" data-index="3" style="background:#386BFF" data-i18n-aria="colour.swatch.blue" aria-label="Azul"></button>
+            <button class="color-swatch" type="button" data-color="#F4D83B" data-index="4" style="background:#F4D83B" data-i18n-aria="colour.swatch.yellow" aria-label="Amarillo"></button>
+            <button class="color-swatch" type="button" data-color="#E84DCE" data-index="5" style="background:#E84DCE" data-i18n-aria="colour.swatch.magenta" aria-label="Magenta"></button>
+            <button class="color-swatch" type="button" data-color="#43D9D0" data-index="6" style="background:#43D9D0" data-i18n-aria="colour.swatch.cyan" aria-label="Cian"></button>
+            <button class="color-swatch" type="button" data-color="#F4F4F0" data-index="7" style="background:#F4F4F0" data-i18n-aria="colour.swatch.white" aria-label="Blanco"></button>
+          </div>
+          <input id="customColor" class="custom-color" type="color" value="#ff343b" data-i18n-aria="colour.customColorAria" aria-label="Elegir color personalizado">
+        </div>
+      </div>
+      <div id="brightnessControl" class="lighting-control">
+        <label for="lightingBrightness"><span>Lighting brightness</span><output id="brightnessValue">9</output></label>
+        <input id="lightingBrightness" type="range" min="0" max="9" step="1" value="9">
+      </div>
+      <div id="speedControl" class="lighting-control" hidden>
+        <label for="lightingSpeed"><span>Lighting speed</span><output id="speedValue">5</output></label>
+        <input id="lightingSpeed" type="range" min="0" max="9" step="1" value="5">
+      </div>
+    </aside>
+  </main>
+  <main id="remapView" class="remap-view" hidden>
+    <aside class="remap-profiles">
+      <div class="eyebrow">Profile</div>
+      <h2>Layers</h2>
+      <div id="remapLayers" class="remap-layer-list">
+        <button class="remap-layer active" type="button" data-layer="default">Default</button>
+        <button class="remap-layer" type="button" data-layer="fn">Fn</button>
+        <button class="remap-layer" type="button" data-layer="fn2">Fn2</button>
+      </div>
+      <div class="remap-bind">
+        <label class="advanced-toggle" for="remapBind"><span data-i18n="remap.bindToggle">Asociar a un perfil</span><input id="remapBind" type="checkbox"></label>
+        <select id="remapBindProfile" data-i18n-aria="remap.bindSelectAria" aria-label="Perfil del remap" hidden></select>
+        <p id="remapBindHint" class="hint" data-i18n="remap.bindHint">Sin marcar: el remap es global y se aplica siempre. Marcado: solo se activa cuando se abre ese perfil (a mano o por detección automática de su juego) y al salir se restaura el global.</p>
+      </div>
+      <p class="remap-status" data-i18n="remap.previewTitle">Remap preview</p>
+    </aside>
+    <section class="remap-board">
+      <div class="section-heading"><div><div class="eyebrow">Remap</div><h2 id="remapLayerTitle">Default</h2></div></div>
+      <div id="remapViewport" class="keyboard-scroll"><div id="remapKeyboard" class="keyboard" data-i18n-aria="remap.ariaBoard" aria-label="Teclado para remapeo"></div></div>
+      <div class="remap-selection-bar"><span id="remapSelectionCount" data-i18n="editor.noneSelected">Ninguna tecla seleccionada</span><span data-i18n="remap.dragHint">Selección por arrastre</span></div>
+      <button id="applyRemap" class="primary" type="button" style="margin-top:12px" data-i18n="remap.applyBtn">Aplicar al teclado</button>
+      <div id="remapStatus" class="remap-status" role="status" data-i18n="remap.pendingStatus">Cambios sin aplicar: pulsa «Aplicar al teclado» para enviarlos.</div>
+    </section>
+    <aside class="remap-actions">
+      <div class="eyebrow">Function</div>
+      <div class="remap-actions-grid" data-action-group="function"></div>
+      <div class="remap-category">Characters</div>
+      <div class="remap-actions-grid" data-action-group="characters"></div>
+      <div class="remap-category">Numerals</div>
+      <div class="remap-actions-grid" data-action-group="numerals"></div>
+      <div class="remap-category">Numpad</div>
+      <div class="remap-actions-grid" data-action-group="numpad"></div>
+      <div class="remap-category">Large Keys</div>
+      <div class="remap-actions-grid" data-action-group="large"></div>
+      <div class="remap-category">Modify</div>
+      <div class="remap-actions-grid" data-action-group="modify"></div>
+      <div class="remap-category">Multimedia</div>
+      <div class="remap-actions-grid" data-action-group="media"></div>
+      <div class="remap-category">Mouse</div>
+      <div class="remap-actions-grid" data-action-group="mouse"></div>
+      <button id="clearRemap" class="remap-action" type="button" style="width:100%;margin-top:12px" data-i18n="remap.clearBtn">Limpiar asignación</button>
+    </aside>
+  </main>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

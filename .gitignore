@@ -1,0 +1,17 @@
+# Dependencias y empaquetado
+node_modules/
+release/
+dist/
+out/
+
+# Logs y temporales
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Configuración local generada
+config.json

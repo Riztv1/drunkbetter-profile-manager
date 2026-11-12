@@ -1,0 +1,63 @@
+{
+  "name": "drunkbetter-profile-manager",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "node scripts/selftest.js",
+    "start": "electron .",
+    "rebuild:native": "electron-builder install-app-deps",
+    "build:win": "electron-builder --win nsis portable",
+    "list": "node -e \"console.table(require('node-hid').devices().filter(d => String(d.product || d.manufacturer || '').toLowerCase().includes('drunkdeer')).map(d => ({product: d.product, path: d.path, interface: d.interface, usagePage: d.usagePage, usage: d.usage})))\""
+  },
+  "keywords": [
+    "drunkbetter",
+    "drunkdeer",
+    "profile-manager",
+    "rapid-trigger"
+  ],
+  "author": "DrunkBetter",
+  "license": "ISC",
+  "description": "DrunkBetter Profile Manager para teclados magnéticos DrunkDeer A75 Pro",
+  "dependencies": {
+    "active-win": "^8.2.1",
+    "express": "^5.3.0",
+    "node-hid": "^3.4.0"
+  },
+  "devDependencies": {
+    "electron": "^37.2.6",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.drunkbetter.profilemanager",
+    "productName": "DrunkBetter Profile Manager",
+    "npmRebuild": false,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "icon": "public/icons/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icons/icon.ico",
+      "uninstallerIcon": "public/icons/icon.ico",
+      "installerHeaderIcon": "public/icons/icon.ico"
+    },
+    "portable": {
+      "artifactName": "${productName} Portable ${version}.${ext}"
+    }
+  }
+}
