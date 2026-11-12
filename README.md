@@ -1,34 +1,36 @@
+> 🇬🇧 **English** · [🇪🇸 Leer en español](README.es.md)
+
 # DrunkBetter Profile Manager
 
-Aplicación de escritorio en Electron para gestionar perfiles del teclado magnético **DrunkDeer A75 Pro** (`VID 1452` / `PID 591`) directamente por USB HID sin depender del navegador.
+Electron desktop application to manage profiles for the **DrunkDeer A75 Pro** magnetic keyboard (`VID 1452` / `PID 591`) directly over USB HID without relying on a browser.
 
-## Características principales
+## Main Features
 
-- **Gestión de perfiles:** creación, renombrado (clic derecho), eliminación, importación y exportación en formato `.json` compatible con el esquema oficial (`keys_array`, `rtp`, `features`).
-- **Actuación y Rapid Trigger por tecla:** selección individual o por arrastre rectangular con ajuste independiente de *Punto de actuación* (`0.2–3.3 mm`), *Press to activate* (`0.1–3.1 mm`) y *Release Reset* (`0.1–3.1 mm`).
-- **Modos de rendimiento:**
+- **Profile management:** create, rename (right-click), delete, import, and export profiles in `.json` format compatible with the official schema (`keys_array`, `rtp`, `features`).
+- **Per-key actuation & Rapid Trigger:** single-key or drag-box selection with independent adjustment of *Actuation point* (`0.2–3.3 mm`), *Press to activate* (`0.1–3.1 mm`), and *Release Reset* (`0.1–3.1 mm`).
+- **Performance modes:**
   - *Rapid Trigger Mode*
-  - *Last Win Mode* (grupos de 2 teclas con prioridad a la última pulsación)
-  - *Release Dual-Trigger* (grupos tecla principal + disparo con activación y reset propios)
-  - *Turbo Mode* (con gestión de `Turbo mode light` y restauración de iluminación previa al desactivarlo)
+  - *Last Win Mode* (2-key groups prioritizing the last key pressed)
+  - *Release Dual-Trigger* (main + trigger key pairs with independent actuation and reset)
+  - *Turbo Mode* (manages `Turbo mode light` and restores previous lighting on disable)
   - *Keystroke Tracking*
-- **Detección automática de aplicaciones:** cambia automáticamente de perfil cuando un `.exe` configurado pasa a primer plano.
-- **Iluminación (`Colour`):** control de efectos integrados, `Custom light` por tecla, `Turbo mode light`, brillo (`0–9`), velocidad (`0–9`) y protección de 3 pulsaciones mientras Turbo Mode está activo.
-- **Remapeo (`Remap`):** editor de 3 capas (`Default`, `Fn`, `Fn2`), acciones de función (`SP+`, `SP-`, `BR+`, `BR-`, etc.), multimedia y ratón, con opción de aplicar un remap global o asociarlo a un perfil concreto.
-- **Integración con Windows y multiidioma:** icono en la bandeja del sistema (*tray*), inicio opcional con Windows en segundo plano, 5 temas visuales (`Azul`, `Dark`, `White`, `Tierra`, `IBM`), configuración del perfil al cerrar e interfaz en **Español / English** (automática según el idioma del sistema, con selector manual en Ajustes).
+- **Auto application detection:** automatically switches profiles when a linked `.exe` process comes into focus.
+- **Lighting (`Colour`):** built-in effects, per-key `Custom light`, `Turbo mode light`, brightness (`0–9`), speed (`0–9`), and 3-click protection while Turbo Mode is active.
+- **Remapping (`Remap`):** 3-layer editor (`Default`, `Fn`, `Fn2`) with function actions (`SP+`, `SP-`, `BR+`, `BR-`, etc.), media keys, and mouse clicks, assignable globally or bound to a specific profile.
+- **Windows integration & multi-language UI:** system tray icon, optional background launch at Windows startup, 5 visual themes (`Blue`, `Dark`, `White`, `Earth`, `IBM`), customizable exit profile behavior, and automatic **English / Español** UI (follows system locale, with manual selector in Settings).
 
-## Descarga e instalación (usuarios)
+## Download & Installation (Users)
 
-Desde la pestaña **Releases** del repositorio puedes descargar cualquiera de las dos versiones compiladas para Windows:
+From the repository's **Releases** tab you can download either compiled Windows build:
 
-- **`DrunkBetter Profile Manager Setup 1.0.0.exe`**: instalador estándar para Windows (recomendado si quieres usar la opción *"Iniciar con Windows"*).
-- **`DrunkBetter Profile Manager Portable 1.0.0.exe`**: ejecutable directo sin instalación.
+- **`DrunkBetter Profile Manager Setup 1.0.0.exe`**: standard Windows installer (recommended if you want to use *"Launch at Windows startup"*).
+- **`DrunkBetter Profile Manager Portable 1.0.0.exe`**: standalone portable executable with no installation required.
 
-> **Nota:** Al no contar con firma digital comercial, Windows SmartScreen puede mostrar *"Windows protegió su PC"* la primera vez. Pulsa **Más información → Ejecutar de todas formas**. Se recomienda cerrar la web/app oficial de DrunkDeer mientras se usa este gestor para evitar conflictos en la interfaz USB HID.
+> **Note:** Because this release is not signed with a commercial certificate, Windows SmartScreen may show *"Windows protected your PC"* on first launch. Click **More info → Run anyway** (and verify the SHA-256 checksums published in the Release). Please close the official DrunkDeer web/desktop software while using this manager to avoid USB HID conflicts.
 
-## Desarrollo
+## Development
 
-Requiere **Node.js 20 o superior**:
+Requires **Node.js 20 or higher**:
 
 ```powershell
 npm install
@@ -36,40 +38,40 @@ npm run rebuild:native
 npm start
 ```
 
-> `npm run rebuild:native` recompila el módulo nativo `node-hid` para la versión de Electron instalada.
+> `npm run rebuild:native` rebuilds the native `node-hid` module for the installed Electron version.
 
-### Scripts disponibles
+### Available Scripts
 
-- `npm start`: inicia la aplicación en modo desarrollo.
-- `npm test`: ejecuta las pruebas de verificación de tramas (`scripts/selftest.js`).
-- `npm run list`: lista las interfaces HID de DrunkDeer detectadas.
-- `npm run build:win`: genera el instalador NSIS y el ejecutable portable en `release/`.
+- `npm start`: launches the application in development mode.
+- `npm test`: runs the HID frame verification test suite (`scripts/selftest.js`).
+- `npm run list`: lists detected DrunkDeer HID interfaces.
+- `npm run build:win`: builds the NSIS installer and portable executable into `release/`.
 
-## Estructura del proyecto
+## Project Structure
 
 ```text
-├── main.js               # Proceso principal de Electron, bandeja e IPC
-├── preload.js            # Puente seguro (contextBridge) hacia la interfaz
-├── public/               # Interfaz web (HTML, CSS, app.js e iconos)
+├── main.js               # Electron main process, system tray, and IPC
+├── preload.js            # Secure contextBridge preload script
+├── public/               # Web UI (HTML, CSS, app.js, i18n.js, and icons)
 ├── src/
-│   ├── autoMode.js       # Detección de ventana/proceso en primer plano
-│   ├── config.js         # Constantes HID (VID/PID, tiempos, flags)
-│   ├── configStore.js    # Persistencia y normalización de config.json
-│   ├── keyboard.js       # Cola de escritura HID con confirmación por eco
-│   ├── profiles.js       # Perfiles integrados por defecto
-│   ├── protocol.js       # Codificación de tramas binarias USB HID
-│   ├── remap.js          # Validación y construcción de capas de remapeo
-│   └── remapBaseline.js  # Tabla de fábrica (Reset all keys) del A75 Pro
+│   ├── autoMode.js       # Foreground window/process detection
+│   ├── config.js         # HID constants (VID/PID, timings, flags)
+│   ├── configStore.js    # config.json persistence and normalization
+│   ├── keyboard.js       # HID write queue with echo verification
+│   ├── profiles.js       # Built-in default profiles
+│   ├── protocol.js       # USB HID binary frame encoder
+│   ├── remap.js          # Remap layer validation and builder
+│   └── remapBaseline.js  # Factory remap baseline (Reset all keys) for A75 Pro
 └── scripts/
-    ├── selftest.js       # Suite de pruebas contra capturas oficiales
-    └── probe-hid.js      # Utilidad de inspección HID
+    ├── selftest.js       # Test suite against official captures
+    └── probe-hid.js      # HID inspection utility
 ```
 
-## Avisos de uso, hardware y privacidad
+## Usage, Hardware & Privacy Notices
 
-- **Políticas Anti-Cheat:** funciones como **Last Win Mode** (*SOCD / Snap Tap*) o **Release Dual-Trigger** (macros 2-en-1) pueden estar restringidas o prohibidas por normativas de títulos y plataformas competitivas (como Valve en *Counter-Strike 2* o *Valorant*). El usuario final asume toda la responsabilidad por su uso.
-- **Compatibilidad de hardware y protocolo USB HID:** este proyecto utiliza tramas binarias obtenidas mediante capturas sobre el **DrunkDeer A75 Pro** (`VID 1452` / `PID 591`), sin usar un SDK oficial. No se garantiza el funcionamiento en otros modelos de DrunkDeer ni tras futuras actualizaciones de firmware. En caso de cualquier desajuste, siempre puedes restablecer el teclado desde el software o configurador web oficial de DrunkDeer.
-- **Privacidad 100 % local:** tanto la detección de ventana en primer plano (`active-win`) como el modo *Keystroke Tracking* se ejecutan exclusivamente de forma local en tu equipo, sin conexión a internet ni telemetría.
+- **Anti-Cheat Policies:** features such as **Last Win Mode** (*SOCD / Snap Tap*) or **Release Dual-Trigger** (2-in-1 macros) may be restricted or prohibited by competitive game rules and platforms (such as Valve in *Counter-Strike 2* or *Valorant*). Use of these features is solely at the end user's responsibility.
+- **Hardware & USB HID Protocol Compatibility:** this project sends binary USB HID frames derived from protocol captures of the **DrunkDeer A75 Pro** (`VID 1452` / `PID 591`), without an official SDK. Compatibility with other DrunkDeer models or future official firmware updates is not guaranteed. If anything goes wrong, you can always reset your keyboard using official DrunkDeer software or web configurator.
+- **100% Local Privacy:** both foreground window detection (`active-win`) and *Keystroke Tracking* run strictly locally on your machine, with zero internet connection or telemetry.
 
 ### Disclaimer & Trademark Notice
 
@@ -80,6 +82,6 @@ DrunkBetter Profile Manager is an independent, open-source community tool develo
 - "DrunkDeer" and any related names, marks, emblems, and images are registered trademarks of their respective owners. The use of any trade name or trademark is strictly for identification and reference purposes and does not imply any association with the trademark holder.
 - The software is provided "as is", without warranty of any kind, express or implied. See the [LICENSE](LICENSE) file for details.
 
-## Licencia
+## License
 
-Este proyecto se distribuye bajo la licencia [ISC](LICENSE).
+This project is distributed under the [ISC](LICENSE) License.
